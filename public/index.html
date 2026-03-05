@@ -56,22 +56,6 @@
       })(window.location);
     </script>
     <!-- End Single Page Apps for GitHub Pages -->
-<script>
-  (function(d,t) {
-    var BASE_URL="https://chatwoot.qodeq.net";
-    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-    g.src=BASE_URL+"/packs/js/sdk.js";
-    g.defer = true;
-    g.async = true;
-    s.parentNode.insertBefore(g,s);
-    g.onload=function(){
-      window.chatwootSDK.run({
-        websiteToken: 'wfphpA37MGrQ15awmYAgQcrk',
-        baseUrl: BASE_URL
-      })
-    }
-  })(document,"script");
-</script>
 
   </head>
   <body>
@@ -87,5 +71,20 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script>
+      (function(d,t) {
+        var BASE_URL="https://chatwoot.qodeq.net";
+        var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+        g.src=BASE_URL+"/packs/js/sdk.js";
+        g.async = true;
+        s.parentNode.insertBefore(g,s);
+        g.onload=function(){
+          window.chatwootSDK.run({
+            websiteToken: 'NpLN9t3Lia747bvT4Vpt8KW6',
+            baseUrl: BASE_URL
+          })
+        }
+      })(document,"script");
+    </script>
   </body>
 </html>
