@@ -1,22 +1,22 @@
 import { useEffect } from 'react';
 
 const BASE_URL = 'http://159.65.126.33:3000';
+const SDK_SRC = `${BASE_URL}/packs/js/sdk.js`;
 
 export const App = () => {
   useEffect(() => {
+    if (document.querySelector(`script[src="${SDK_SRC}"]`)) return;
+
     const script = document.createElement('script');
-    script.src = `${BASE_URL}/packs/js/sdk.js`;
+    script.src = SDK_SRC;
     script.async = true;
     script.onload = () => {
-      window.chatwootSDK?.run({
-        websiteToken: 'DcDn84YZWMBt99kzCH4vT1wJ',
+      window.chatwootSDK.run({
+        websiteToken: 'eP5MqqrHEDoQ4QxpiSyPnSsc',
         baseUrl: BASE_URL
       });
     };
-    document.body.appendChild(script);
-    return () => {
-      script.remove();
-    };
+    document.head.appendChild(script);
   }, []);
 
   return (
