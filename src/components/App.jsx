@@ -12,7 +12,7 @@ export const App = () => {
     script.async = true;
     script.onload = () => {
       window.chatwootSDK.run({
-        websiteToken: 'eP5MqqrHEDoQ4QxpiSyPnSsc',
+        websiteToken: 'sVF7PMYGJzzzWBtbBxPZYu9v',
         baseUrl: BASE_URL
       });
     };
