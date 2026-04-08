@@ -72,20 +72,20 @@
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
     <script>
-      (function(d,t) {
-        var BASE_URL="https://chatwoot.qodeq.net";
-        var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-        g.src=BASE_URL+"/packs/js/sdk.js";
-        g.async = true;
-        s.parentNode.insertBefore(g,s);
-        g.onload=function(){
-          window.chatwootSDK.run({
-            websiteToken: '1yZG8G4MF6f8RUBKpRydLrvM',
-            baseUrl: BASE_URL
-          })
-        }
-      })(document,"script");
-    </script>
+  (function(d,t) {
+    var BASE_URL="https://chatwoot.qodeq.net";
+    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=BASE_URL+"/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g,s);
+    g.onload=function(){
+      window.chatwootSDK.run({
+        websiteToken: 'GnpaW9zrQxzfPkM5DAJZRZD3',
+        baseUrl: BASE_URL
+      })
+    }
+  })(document,"script");
+</script>
     
   </body>
 </html>
