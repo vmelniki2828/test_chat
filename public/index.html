@@ -70,22 +70,21 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-  <script>
-    window.chatwootSettings = { "position": "right", "type": "standard", "launcherTitle": "" };
-    (function (d, t) {
-      var BASE_URL = "https://chatwoot.qodeq.net";
-      var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
-      g.src = BASE_URL + "/packs/js/sdk.js";
-      g.async = true;
-      s.parentNode.insertBefore(g, s);
-      g.onload = function () {
-        window.chatwootSDK.run({
-          websiteToken: 'GnpaW9zrQxzfPkM5DAJZRZD3',
-          baseUrl: BASE_URL
-        })
-      }
-    })(document, "script");
-  </script>
+    <script>
+      (function(d,t) {
+        var BASE_URL="https://chatwoot.qodeq.net";
+        var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+        g.src=BASE_URL+"/packs/js/sdk.js";
+        g.async = true;
+        s.parentNode.insertBefore(g,s);
+        g.onload=function(){
+          window.chatwootSDK.run({
+            websiteToken: '4AFs4TUux2tzXFwjMamkHCZe',
+            baseUrl: BASE_URL
+          })
+        }
+      })(document,"script");
+    </script>
 
 
 </body>
