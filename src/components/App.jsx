@@ -1,16 +1,13 @@
+import { LiquidHeroScene } from 'components/LiquidHeroScene';
+import { HorizontalScrollSection } from 'components/HorizontalScrollSection';
+import { ScrollRevealBlocks } from 'components/ScrollRevealBlocks';
+
 export const App = () => {
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 40,
-        color: '#010101'
-      }}
-    >
-
-    </div>
+    <>
+      <LiquidHeroScene />
+      <ScrollRevealBlocks />
+      <HorizontalScrollSection />
+    </>
   );
 };
