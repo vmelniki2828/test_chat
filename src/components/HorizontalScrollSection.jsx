@@ -67,14 +67,25 @@ const orbRingStyle = {
   opacity: 0.6
 };
 
+const railStyle = {
+  position: 'absolute',
+  top: '26px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  width: 'min(78vw, 760px)',
+  height: '2px',
+  background: 'rgba(255,255,255,0.2)',
+  borderRadius: '999px',
+  overflow: 'visible'
+};
+
 export const HorizontalScrollSection = () => {
   const sectionRef = useRef(null);
-  const autoSnapLockRef = useRef(false);
   const [viewportWidth, setViewportWidth] = useState(
     () => window.innerWidth || 1
   );
   const [progress, setProgress] = useState(0);
-  const scrollPerPanelVh = 10;
+  const scrollPerPanelVh = 22;
 
   useEffect(() => {
     let rafId = 0;
@@ -116,41 +127,23 @@ export const HorizontalScrollSection = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const rect = entry.boundingClientRect;
-        const approachingFromTop =
-          entry.isIntersecting && rect.top > 0 && rect.top < window.innerHeight;
-
-        if (approachingFromTop && !autoSnapLockRef.current) {
-          autoSnapLockRef.current = true;
-          window.scrollTo({
-            top: window.scrollY + rect.top,
-            behavior: 'smooth'
-          });
-          window.setTimeout(() => {
-            autoSnapLockRef.current = false;
-          }, 220);
-        }
-      },
-      { threshold: 0, rootMargin: '0px' }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
   const translateX = useMemo(() => {
     const maxIndex = panels.length - 1;
-    const snappedIndex = Math.round(progress * maxIndex);
+    const snappedIndex = Math.min(maxIndex, Math.floor(progress * panels.length));
     return -snappedIndex * viewportWidth;
   }, [progress, viewportWidth]);
+
+  const activePanelIndex = useMemo(() => {
+    const maxIndex = panels.length - 1;
+    return Math.min(maxIndex, Math.max(0, Math.floor(progress * panels.length)));
+  }, [progress]);
+
+  const railFillPercent = useMemo(() => {
+    if (panels.length <= 1) {
+      return 0;
+    }
+    return (activePanelIndex / (panels.length - 1)) * 100;
+  }, [activePanelIndex]);
 
   return (
     <section
@@ -164,6 +157,81 @@ export const HorizontalScrollSection = () => {
         <div style={{ position: 'absolute', top: 24, right: 28, color: 'rgba(255,255,255,0.55)', fontSize: 12, letterSpacing: '0.2em' }}>
           HORIZONTAL FLOW
         </div>
+        <div style={railStyle}>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: `${railFillPercent}%`,
+              height: '100%',
+              borderRadius: '999px',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
+              boxShadow: '0 0 16px rgba(255,255,255,0.26)'
+            }}
+          />
+          {panels.map((panel, index) => {
+            const leftPercent = (index / (panels.length - 1)) * 100;
+            const isActive = index === activePanelIndex;
+            return (
+              <div
+                key={panel.id}
+                style={{
+                  position: 'absolute',
+                  left: `${leftPercent}%`,
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                <div
+                  style={{
+                    width: isActive ? 12 : 9,
+                    height: isActive ? 12 : 9,
+                    borderRadius: '50%',
+                    background: isActive ? '#ffffff' : 'rgba(255,255,255,0.45)',
+                    boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.45)' : 'none',
+                    transition: 'all 220ms ease'
+                  }}
+                />
+                {isActive && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: 16,
+                      transform: 'translateX(-50%)',
+                      fontSize: 14,
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      color: 'rgba(255,255,255,0.86)',
+                      opacity: 1,
+                      animation: 'panelLabelIn 240ms ease-out'
+                    }}
+                  >
+                    {panel.title}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <style>
+          {`
+            @keyframes panelLabelIn {
+              from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-4px);
+                filter: blur(3px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                filter: blur(0);
+              }
+            }
+          `}
+        </style>
         <div
           style={{
             ...trackStyle,

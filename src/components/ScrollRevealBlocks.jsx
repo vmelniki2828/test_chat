@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const sectionStyle = {
-  minHeight: '82vh',
+  minHeight: '100vh',
   background: '#000000',
   color: '#ffffff',
-  padding: '8vh 7vw 2vh'
+  padding: '10vh 7vw 8vh',
+  boxSizing: 'border-box'
 };
 
 const headingStyle = {

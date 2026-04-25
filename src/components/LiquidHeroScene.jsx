@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 const containerStyle = {
@@ -48,6 +48,30 @@ const overlayStyle = {
   pointerEvents: 'none'
 };
 
+const anchorNavWrapStyle = {
+  position: 'fixed',
+  top: '50%',
+  left: '28px',
+  transform: 'translateY(-50%)',
+  display: 'block',
+  pointerEvents: 'auto',
+  zIndex: 30,
+  padding: '0',
+  border: 'none',
+  background: 'transparent',
+  backdropFilter: 'none',
+  clipPath: 'none'
+};
+
+const anchorRailStyle = {
+  position: 'relative',
+  width: '2px',
+  height: '360px',
+  marginLeft: '10px',
+  background: 'rgba(255,255,255,0.22)',
+  borderRadius: '999px'
+};
+
 const titleStyle = {
   position: 'absolute',
   top: '52%',
@@ -73,23 +97,84 @@ const subtitleStyle = {
 };
 
 const buttonStyle = {
-  border: '1px solid rgba(255, 255, 255, 0.7)',
-  borderRadius: '999px',
-  background: 'transparent',
+  border: '1px solid rgba(255, 255, 255, 0.62)',
+  borderRadius: '0',
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02))',
   color: '#ffffff',
-  padding: '9px 22px',
-  fontSize: '10px',
+  padding: '10px 28px',
+  fontSize: '11px',
   fontWeight: 400,
-  letterSpacing: '0.14em',
+  letterSpacing: '0.18em',
   textTransform: 'uppercase',
-  pointerEvents: 'auto'
+  pointerEvents: 'auto',
+  position: 'relative',
+  clipPath: 'polygon(9% 0, 100% 0, 91% 100%, 0 100%)',
+  overflow: 'hidden',
+  transition: 'transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease, background 300ms ease'
 };
+
+const anchors = [
+  { id: 'hero-main', label: 'Hero' },
+  { id: 'reveal-blocks', label: 'Blocks' },
+  { id: 'horizontal-flow', label: 'Flow' },
+  { id: 'story-steps', label: 'Story' }
+];
 
 export const LiquidHeroScene = () => {
   const mountRef = useRef(null);
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const buttonRef = useRef(null);
+  const [activeAnchor, setActiveAnchor] = useState('hero-main');
+  const [hoveredAnchor, setHoveredAnchor] = useState('');
+  const [isButtonHover, setIsButtonHover] = useState(false);
+
+  useEffect(() => {
+    const updateActiveAnchor = () => {
+      const viewportHeight = window.innerHeight || 1;
+      const checkpoint = viewportHeight * 0.5;
+      let intersectedId = '';
+      let fallbackId = anchors[0].id;
+      let fallbackDistance = Number.POSITIVE_INFINITY;
+
+      anchors.forEach((anchor) => {
+        const node = document.getElementById(anchor.id);
+        if (!node) {
+          return;
+        }
+        const rect = node.getBoundingClientRect();
+        const intersectsCheckpoint = rect.top <= checkpoint && rect.bottom > checkpoint;
+
+        if (intersectsCheckpoint) {
+          intersectedId = anchor.id;
+        }
+
+        const distance = Math.abs(rect.top - checkpoint);
+        if (distance < fallbackDistance) {
+          fallbackDistance = distance;
+          fallbackId = anchor.id;
+        }
+      });
+
+      setActiveAnchor(intersectedId || fallbackId);
+    };
+
+    updateActiveAnchor();
+    window.addEventListener('scroll', updateActiveAnchor, { passive: true });
+    window.addEventListener('resize', updateActiveAnchor);
+    return () => {
+      window.removeEventListener('scroll', updateActiveAnchor);
+      window.removeEventListener('resize', updateActiveAnchor);
+    };
+  }, []);
+
+  const scrollToAnchor = (targetId) => {
+    const node = document.getElementById(targetId);
+    if (!node) {
+      return;
+    }
+    node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -265,10 +350,64 @@ export const LiquidHeroScene = () => {
   }, []);
 
   return (
-    <main style={containerStyle}>
+    <main id="hero-main" style={containerStyle}>
       <div ref={mountRef} style={canvasStyle} />
       <div style={vignetteStyle} />
       <div style={grainStyle} />
+      <nav style={anchorNavWrapStyle}>
+        <div style={anchorRailStyle}>
+          {anchors.map((anchor, index) => {
+            const isActive = activeAnchor === anchor.id;
+            const isHovered = hoveredAnchor === anchor.id;
+            const topPercent = anchors.length > 1 ? (index / (anchors.length - 1)) * 100 : 0;
+            return (
+              <button
+                key={anchor.id}
+                type="button"
+                onClick={() => scrollToAnchor(anchor.id)}
+                onMouseEnter={() => setHoveredAnchor(anchor.id)}
+                onMouseLeave={() => setHoveredAnchor('')}
+                style={{
+                  position: 'absolute',
+                  top: `${topPercent}%`,
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: isActive ? 14 : 10,
+                  height: isActive ? 14 : 10,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(255,255,255,0.42)',
+                  background: isActive ? '#ffffff' : isHovered ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.36)',
+                  boxShadow:
+                    isActive || isHovered ? '0 0 16px rgba(255,255,255,0.35)' : '0 0 0 rgba(0,0,0,0)',
+                  cursor: 'pointer',
+                  transition: 'all 220ms ease',
+                  padding: 0
+                }}
+                aria-label={anchor.label}
+              >
+                {(isActive || isHovered) && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '24px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      opacity: 0.95
+                    }}
+                  >
+                    {anchor.label}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
       <div style={overlayStyle}>
         <h1 ref={titleRef} style={{ ...titleStyle, opacity: 0 }}>
           QODEQ
@@ -287,15 +426,48 @@ export const LiquidHeroScene = () => {
         </p>
         <button
           ref={buttonRef}
+          onMouseEnter={() => setIsButtonHover(true)}
+          onMouseLeave={() => setIsButtonHover(false)}
           style={{
             ...buttonStyle,
             opacity: 0,
             position: 'relative',
             transform: 'translateY(42px)',
-            filter: 'blur(6px)'
+            filter: 'blur(6px)',
+            boxShadow: isButtonHover ? '0 0 24px rgba(255,255,255,0.22)' : '0 0 0 rgba(0,0,0,0)',
+            borderColor: isButtonHover ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.62)',
+            background: isButtonHover
+              ? 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02))'
           }}
           type="button"
         >
+          <span
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 14,
+              height: 14,
+              borderTop: '1px solid rgba(255,255,255,0.7)',
+              borderLeft: '1px solid rgba(255,255,255,0.7)',
+              opacity: 0.8,
+              pointerEvents: 'none'
+            }}
+          />
+          <span
+            style={{
+              position: 'absolute',
+              right: 0,
+              bottom: 0,
+              width: 14,
+              height: 14,
+              borderRight: '1px solid rgba(255,255,255,0.7)',
+              borderBottom: '1px solid rgba(255,255,255,0.7)',
+              opacity: 0.8,
+              pointerEvents: 'none'
+            }}
+          />
           Join the abyss
         </button>
       </div>
