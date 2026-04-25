@@ -1,9 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+const darkTheme = {
+  colors: {
+    background: '#0D0D0D',
+    surface: '#1A1A1A',
+    primary: '#ECECEC',
+    secondary: '#ACACAC',
+    muted: '#8E8E8E',
+    border: '#2D2D2D',
+    divider: '#363636',
+    hover: '#2A2A2A',
+    accent: '#10A37F',
+    accentHover: '#0E8C6F'
+  }
+};
+
 const sectionStyle = {
   minHeight: '100vh',
-  background: '#000000',
-  color: '#ffffff',
+  background: darkTheme.colors.background,
+  color: darkTheme.colors.primary,
   padding: '10vh 7vw 8vh',
   boxSizing: 'border-box'
 };
@@ -21,7 +36,7 @@ const subtitleStyle = {
   margin: 0,
   marginBottom: '56px',
   maxWidth: '700px',
-  color: 'rgba(255,255,255,0.62)',
+  color: darkTheme.colors.secondary,
   fontSize: '14px',
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
@@ -35,8 +50,8 @@ const gridStyle = {
 };
 
 const cardBaseStyle = {
-  border: '1px solid rgba(255,255,255,0.14)',
-  background: 'rgba(255,255,255,0.02)',
+  border: `1px solid ${darkTheme.colors.border}`,
+  background: darkTheme.colors.surface,
   borderRadius: '20px',
   minHeight: '200px',
   padding: '26px',
@@ -136,14 +151,14 @@ export const ScrollRevealBlocks = () => {
                 : 'translateY(52px) scale(0.985)',
               transitionDelay: `${index * 130}ms`,
               borderColor: isActive
-                ? 'rgba(255,255,255,0.42)'
-                : 'rgba(255,255,255,0.14)',
+                ? darkTheme.colors.accent
+                : darkTheme.colors.border,
               boxShadow: isActive
-                ? '0 16px 50px rgba(255,255,255,0.1)'
+                ? '0 16px 50px rgba(16,163,127,0.22)'
                 : '0 10px 28px rgba(0,0,0,0.35)'
             }}
           >
-            <div style={{ fontSize: '11px', opacity: 0.6, letterSpacing: '0.22em' }}>
+            <div style={{ fontSize: '11px', color: darkTheme.colors.muted, letterSpacing: '0.22em' }}>
               {card.metric}
             </div>
             <h3
@@ -157,7 +172,7 @@ export const ScrollRevealBlocks = () => {
             >
               {card.title}
             </h3>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65 }}>
+            <p style={{ margin: 0, color: darkTheme.colors.secondary, lineHeight: 1.65 }}>
               {card.text}
             </p>
           </article>

@@ -1,12 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
+const darkTheme = {
+  colors: {
+    background: '#0D0D0D',
+    surface: '#1A1A1A',
+    primary: '#ECECEC',
+    secondary: '#ACACAC',
+    muted: '#8E8E8E',
+    border: '#2D2D2D',
+    divider: '#363636',
+    hover: '#2A2A2A',
+    accent: '#10A37F',
+    accentHover: '#0E8C6F'
+  }
+};
+
 const containerStyle = {
   width: '100%',
   height: '100vh',
   position: 'relative',
   overflow: 'hidden',
-  background: '#000000'
+  background: darkTheme.colors.background
 };
 
 const canvasStyle = {
@@ -21,8 +36,8 @@ const vignetteStyle = {
   position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
-  background: 'rgba(0, 0, 0, 0.2)',
-  boxShadow: 'inset 0 0 180px rgba(0, 0, 0, 0.95)'
+  background: 'rgba(13, 13, 13, 0.2)',
+  boxShadow: 'inset 0 0 180px rgba(13, 13, 13, 0.95)'
 };
 
 const grainStyle = {
@@ -43,7 +58,7 @@ const overlayStyle = {
   justifyContent: 'flex-end',
   alignItems: 'center',
   paddingBottom: '11vh',
-  color: '#ffffff',
+  color: darkTheme.colors.primary,
   fontFamily: "Inter, 'Segoe UI', Arial, sans-serif",
   pointerEvents: 'none'
 };
@@ -68,7 +83,7 @@ const anchorRailStyle = {
   width: '2px',
   height: '360px',
   marginLeft: '10px',
-  background: 'rgba(255,255,255,0.22)',
+  background: darkTheme.colors.divider,
   borderRadius: '999px'
 };
 
@@ -97,10 +112,10 @@ const subtitleStyle = {
 };
 
 const buttonStyle = {
-  border: '1px solid rgba(255, 255, 255, 0.62)',
+  border: `1px solid ${darkTheme.colors.border}`,
   borderRadius: '0',
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02))',
-  color: '#ffffff',
+  background: `linear-gradient(135deg, ${darkTheme.colors.hover}, ${darkTheme.colors.surface})`,
+  color: darkTheme.colors.primary,
   padding: '10px 28px',
   fontSize: '11px',
   fontWeight: 400,
@@ -191,7 +206,7 @@ export const LiquidHeroScene = () => {
       alpha: true,
       powerPreference: 'low-power'
     });
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x0d0d0d, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     mountNode.appendChild(renderer.domElement);
 
@@ -209,18 +224,18 @@ export const LiquidHeroScene = () => {
     lightC.position.set(-0.9, 0.9, 1.6);
     scene.add(lightC);
 
-    const ambient = new THREE.AmbientLight(0x222222, 0.2);
+    const ambient = new THREE.AmbientLight(0x2d2d2d, 0.2);
     scene.add(ambient);
 
     const geometry = new THREE.IcosahedronGeometry(1.2, 6);
     const material = new THREE.MeshPhysicalMaterial({
-      color: 0x6f6f6f,
+      color: 0x8e8e8e,
       metalness: 0,
       roughness: 0.92,
       clearcoat: 0,
       clearcoatRoughness: 1,
       sheen: 0,
-      sheenColor: new THREE.Color(0x000000),
+      sheenColor: new THREE.Color(0x0d0d0d),
       transparent: true,
       opacity: 0
     });
@@ -375,8 +390,8 @@ export const LiquidHeroScene = () => {
                   width: isActive ? 14 : 10,
                   height: isActive ? 14 : 10,
                   borderRadius: '50%',
-                  border: '1px solid rgba(255,255,255,0.42)',
-                  background: isActive ? '#ffffff' : isHovered ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.36)',
+                  border: `1px solid ${darkTheme.colors.border}`,
+                  background: isActive ? darkTheme.colors.accent : isHovered ? darkTheme.colors.secondary : darkTheme.colors.muted,
                   boxShadow:
                     isActive || isHovered ? '0 0 16px rgba(255,255,255,0.35)' : '0 0 0 rgba(0,0,0,0)',
                   cursor: 'pointer',
@@ -392,7 +407,7 @@ export const LiquidHeroScene = () => {
                       left: '24px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: '#ffffff',
+                      color: darkTheme.colors.primary,
                       fontSize: '14px',
                       letterSpacing: '0.18em',
                       textTransform: 'uppercase',
@@ -434,11 +449,11 @@ export const LiquidHeroScene = () => {
             position: 'relative',
             transform: 'translateY(42px)',
             filter: 'blur(6px)',
-            boxShadow: isButtonHover ? '0 0 24px rgba(255,255,255,0.22)' : '0 0 0 rgba(0,0,0,0)',
-            borderColor: isButtonHover ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.62)',
+            boxShadow: isButtonHover ? '0 0 24px rgba(16,163,127,0.28)' : '0 0 0 rgba(0,0,0,0)',
+            borderColor: isButtonHover ? darkTheme.colors.accentHover : darkTheme.colors.border,
             background: isButtonHover
-              ? 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))'
-              : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02))'
+              ? `linear-gradient(135deg, ${darkTheme.colors.accentHover}, ${darkTheme.colors.hover})`
+              : `linear-gradient(135deg, ${darkTheme.colors.hover}, ${darkTheme.colors.surface})`
           }}
           type="button"
         >
@@ -449,8 +464,8 @@ export const LiquidHeroScene = () => {
               left: 0,
               width: 14,
               height: 14,
-              borderTop: '1px solid rgba(255,255,255,0.7)',
-              borderLeft: '1px solid rgba(255,255,255,0.7)',
+              borderTop: `1px solid ${darkTheme.colors.secondary}`,
+              borderLeft: `1px solid ${darkTheme.colors.secondary}`,
               opacity: 0.8,
               pointerEvents: 'none'
             }}
@@ -462,8 +477,8 @@ export const LiquidHeroScene = () => {
               bottom: 0,
               width: 14,
               height: 14,
-              borderRight: '1px solid rgba(255,255,255,0.7)',
-              borderBottom: '1px solid rgba(255,255,255,0.7)',
+              borderRight: `1px solid ${darkTheme.colors.secondary}`,
+              borderBottom: `1px solid ${darkTheme.colors.secondary}`,
               opacity: 0.8,
               pointerEvents: 'none'
             }}

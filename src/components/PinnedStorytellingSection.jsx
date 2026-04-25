@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+const darkTheme = {
+  colors: {
+    background: '#0D0D0D',
+    surface: '#1A1A1A',
+    primary: '#ECECEC',
+    secondary: '#ACACAC',
+    muted: '#8E8E8E',
+    border: '#2D2D2D',
+    divider: '#363636',
+    hover: '#2A2A2A',
+    accent: '#10A37F',
+    accentHover: '#0E8C6F'
+  }
+};
+
 const steps = [
   {
     id: '01',
@@ -25,8 +40,8 @@ const steps = [
 
 const sectionStyle = {
   position: 'relative',
-  background: '#000000',
-  color: '#ffffff'
+  background: darkTheme.colors.background,
+  color: darkTheme.colors.primary
 };
 
 const stickyStyle = {
@@ -52,8 +67,8 @@ const rightColumnStyle = {
 };
 
 const visualCardStyle = {
-  border: '1px solid rgba(255,255,255,0.2)',
-  background: 'linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 55%, rgba(0,0,0,0.45))',
+  border: `1px solid ${darkTheme.colors.border}`,
+  background: `linear-gradient(155deg, ${darkTheme.colors.hover}, ${darkTheme.colors.surface} 55%, ${darkTheme.colors.background})`,
   borderRadius: '24px',
   minHeight: 'clamp(280px, 40vh, 430px)',
   padding: '32px',
@@ -178,7 +193,8 @@ export const PinnedStorytellingSection = () => {
                     border: '1px solid rgba(255,255,255,0.14)',
                     borderRadius: 16,
                     padding: '16px 18px',
-                    background: isActive ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.02)',
+                    borderColor: isActive ? darkTheme.colors.accent : darkTheme.colors.border,
+                    background: isActive ? darkTheme.colors.hover : darkTheme.colors.surface,
                     opacity: isActive ? 1 : 0.52,
                     transform: `translateX(${isActive ? 0 : -8}px)`,
                     transition: 'all 320ms ease'
@@ -245,7 +261,7 @@ export const PinnedStorytellingSection = () => {
                       style={{
                         margin: 0,
                         maxWidth: 560,
-                        color: 'rgba(255,255,255,0.75)',
+                        color: darkTheme.colors.secondary,
                         lineHeight: 1.7,
                         fontSize: 'clamp(15px, 1.5vw, 20px)'
                       }}
@@ -268,11 +284,11 @@ export const PinnedStorytellingSection = () => {
                           borderRadius: 999,
                           background:
                             lineIndex <= index
-                              ? 'rgba(255,255,255,0.92)'
-                              : 'rgba(255,255,255,0.2)',
+                              ? darkTheme.colors.accent
+                              : darkTheme.colors.divider,
                           boxShadow:
                             lineIndex <= index
-                              ? '0 0 12px rgba(255,255,255,0.32)'
+                              ? '0 0 12px rgba(16,163,127,0.32)'
                               : 'none',
                           transition: 'all 280ms ease'
                         }}

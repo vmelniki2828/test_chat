@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+const darkTheme = {
+  colors: {
+    background: '#0D0D0D',
+    surface: '#1A1A1A',
+    primary: '#ECECEC',
+    secondary: '#ACACAC',
+    muted: '#8E8E8E',
+    border: '#2D2D2D',
+    divider: '#363636',
+    hover: '#2A2A2A',
+    accent: '#10A37F',
+    accentHover: '#0E8C6F'
+  }
+};
+
 const panels = [
   { id: '01', title: 'Vision', text: 'Экран остается на месте, а секции меняются по горизонтали.' },
   { id: '02', title: 'System', text: 'Переход управляется вертикальным скроллом, без резких прыжков.' },
@@ -9,7 +24,7 @@ const panels = [
 
 const sectionStyle = {
   position: 'relative',
-  background: '#000000'
+  background: darkTheme.colors.background
 };
 
 const stickyStyle = {
@@ -74,7 +89,7 @@ const railStyle = {
   transform: 'translateX(-50%)',
   width: 'min(78vw, 760px)',
   height: '2px',
-  background: 'rgba(255,255,255,0.2)',
+  background: darkTheme.colors.divider,
   borderRadius: '999px',
   overflow: 'visible'
 };
@@ -166,8 +181,8 @@ export const HorizontalScrollSection = () => {
               width: `${railFillPercent}%`,
               height: '100%',
               borderRadius: '999px',
-              background: 'linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,255,255,0.4))',
-              boxShadow: '0 0 16px rgba(255,255,255,0.26)'
+              background: `linear-gradient(90deg, ${darkTheme.colors.accent}, ${darkTheme.colors.accentHover})`,
+              boxShadow: '0 0 16px rgba(16,163,127,0.32)'
             }}
           />
           {panels.map((panel, index) => {
@@ -188,8 +203,8 @@ export const HorizontalScrollSection = () => {
                     width: isActive ? 12 : 9,
                     height: isActive ? 12 : 9,
                     borderRadius: '50%',
-                    background: isActive ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                    boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.45)' : 'none',
+                    background: isActive ? darkTheme.colors.accent : darkTheme.colors.muted,
+                    boxShadow: isActive ? '0 0 20px rgba(16,163,127,0.42)' : 'none',
                     transition: 'all 220ms ease'
                   }}
                 />
@@ -204,7 +219,7 @@ export const HorizontalScrollSection = () => {
                       letterSpacing: '0.18em',
                       textTransform: 'uppercase',
                       whiteSpace: 'nowrap',
-                      color: 'rgba(255,255,255,0.86)',
+                      color: darkTheme.colors.primary,
                       opacity: 1,
                       animation: 'panelLabelIn 240ms ease-out'
                     }}
@@ -242,7 +257,7 @@ export const HorizontalScrollSection = () => {
           {panels.map((panel, index) => (
             <article key={panel.id} style={panelStyle}>
               <div style={{ maxWidth: 760, width: '100%', marginLeft: '2vw' }}>
-                <div style={{ fontSize: 12, opacity: 0.55, letterSpacing: '0.24em', marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: darkTheme.colors.muted, letterSpacing: '0.24em', marginBottom: 14 }}>
                   {panel.id}
                 </div>
                 <h3
@@ -252,7 +267,7 @@ export const HorizontalScrollSection = () => {
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     fontWeight: 300,
-                    color: '#ffffff'
+                    color: darkTheme.colors.primary
                   }}
                 >
                   {panel.title}
@@ -263,7 +278,7 @@ export const HorizontalScrollSection = () => {
                     maxWidth: 640,
                     fontSize: 'clamp(15px, 1.8vw, 21px)',
                     lineHeight: 1.7,
-                    color: 'rgba(255,255,255,0.72)'
+                    color: darkTheme.colors.secondary
                   }}
                 >
                   {panel.text}
