@@ -20,13 +20,19 @@ const sectionStyle = {
   background: darkTheme.colors.background,
   color: darkTheme.colors.primary,
   padding: '10vh 7vw 8vh',
-  boxSizing: 'border-box'
+  boxSizing: 'border-box',
+  display: 'flex',
+  alignItems: 'center'
+};
+
+const contentWrapStyle = {
+  width: '100%'
 };
 
 const headingStyle = {
   margin: 0,
   marginBottom: '14px',
-  fontSize: 'clamp(26px, 4vw, 54px)',
+  fontSize: 'clamp(32px, 4.4vw, 64px)',
   letterSpacing: '0.08em',
   fontWeight: 300,
   textTransform: 'uppercase'
@@ -35,9 +41,9 @@ const headingStyle = {
 const subtitleStyle = {
   margin: 0,
   marginBottom: '56px',
-  maxWidth: '700px',
+  maxWidth: '820px',
   color: darkTheme.colors.secondary,
-  fontSize: '14px',
+  fontSize: '16px',
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
   lineHeight: 1.8
@@ -46,7 +52,7 @@ const subtitleStyle = {
 const gridStyle = {
   display: 'grid',
   gap: '22px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))'
+  gridTemplateColumns: 'repeat(6, minmax(0, 1fr))'
 };
 
 const cardBaseStyle = {
@@ -56,24 +62,34 @@ const cardBaseStyle = {
   minHeight: '200px',
   padding: '26px',
   backdropFilter: 'blur(1.5px)',
-  transition: 'transform 650ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 650ms ease, border-color 350ms ease, box-shadow 350ms ease'
+  transition: 'transform 650ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 650ms ease, border-color 520ms ease, box-shadow 700ms ease'
 };
 
 const cards = [
   {
-    title: 'Signal',
-    text: 'Плавный вход и контролируемый ритм элементов при прокрутке.',
+    title: 'Automation',
+    text: 'Automation of up to 70% of chats, calls and inquiries.',
     metric: '01'
   },
   {
-    title: 'Flow',
-    text: 'Блоки проявляются по мере чтения, создавая ощущение движения.',
+    title: 'Savings',
+    text: 'Savings of up to $50,000 per month on support.',
     metric: '02'
   },
   {
-    title: 'Pulse',
-    text: 'Легкий интерактив на ховер без перегруза: живо, но минималистично.',
+    title: 'Languages',
+    text: 'Support for up to 15 languages.',
     metric: '03'
+  },
+  {
+    title: 'Integrations',
+    text: 'Integration with CRM, payment systems and gaming platforms.',
+    metric: '04'
+  },
+  {
+    title: 'Analytics',
+    text: 'Analytics and quality control.',
+    metric: '05'
   }
 ];
 
@@ -134,6 +150,20 @@ export const ScrollRevealBlocks = () => {
       cards.map((card, index) => {
         const isVisible = visibleMap[index];
         const isActive = activeIndex === index;
+        const transitionEnter = isVisible
+          ? 'transform 220ms ease, border-color 520ms ease, box-shadow 700ms ease'
+          : 'transform 650ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 650ms ease, border-color 520ms ease, box-shadow 700ms ease';
+        const transitionOpacity = isVisible
+          ? 'opacity 650ms ease'
+          : 'opacity 650ms ease';
+        const centeredSecondRowPlacement =
+          cards.length === 5
+            ? index < 3
+              ? 'span 2'
+              : index === 3
+                ? '2 / span 2'
+                : '4 / span 2'
+            : 'span 2';
         return (
           <article
             key={card.title}
@@ -149,22 +179,24 @@ export const ScrollRevealBlocks = () => {
               transform: isVisible
                 ? `translateY(0px) scale(${isActive ? 1.015 : 1})`
                 : 'translateY(52px) scale(0.985)',
-              transitionDelay: `${index * 130}ms`,
+              transition: `${transitionOpacity}, ${transitionEnter}`,
+              transitionDelay: isVisible ? '0ms' : `${index * 130}ms`,
               borderColor: isActive
                 ? darkTheme.colors.accent
                 : darkTheme.colors.border,
               boxShadow: isActive
                 ? '0 16px 50px rgba(16,163,127,0.22)'
-                : '0 10px 28px rgba(0,0,0,0.35)'
+                : '0 10px 28px rgba(0,0,0,0.35)',
+              gridColumn: centeredSecondRowPlacement
             }}
           >
-            <div style={{ fontSize: '11px', color: darkTheme.colors.muted, letterSpacing: '0.22em' }}>
+            <div style={{ fontSize: '12px', color: darkTheme.colors.muted, letterSpacing: '0.22em' }}>
               {card.metric}
             </div>
             <h3
               style={{
                 margin: '12px 0 10px',
-                fontSize: 'clamp(20px, 2.4vw, 30px)',
+                fontSize: 'clamp(24px, 2.6vw, 36px)',
                 fontWeight: 300,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase'
@@ -172,7 +204,14 @@ export const ScrollRevealBlocks = () => {
             >
               {card.title}
             </h3>
-            <p style={{ margin: 0, color: darkTheme.colors.secondary, lineHeight: 1.65 }}>
+            <p
+              style={{
+                margin: 0,
+                color: darkTheme.colors.secondary,
+                lineHeight: 1.65,
+                fontSize: 'clamp(16px, 1.4vw, 20px)'
+              }}
+            >
               {card.text}
             </p>
           </article>
@@ -183,32 +222,33 @@ export const ScrollRevealBlocks = () => {
 
   return (
     <section style={sectionStyle}>
-      <h2
-        ref={introRef}
-        style={{
-          ...headingStyle,
-          opacity: introVisible ? 1 : 0,
-          transform: introVisible ? 'translateY(0px)' : 'translateY(42px)',
-          filter: introVisible ? 'blur(0px)' : 'blur(8px)',
-          transition: 'opacity 700ms ease, transform 800ms cubic-bezier(0.2, 0.9, 0.2, 1), filter 700ms ease'
-        }}
-      >
-        Next Blocks
-      </h2>
-      <p
-        style={{
-          ...subtitleStyle,
-          opacity: introVisible ? 1 : 0,
-          transform: introVisible ? 'translateY(0px)' : 'translateY(34px)',
-          filter: introVisible ? 'blur(0px)' : 'blur(6px)',
-          transition:
-            'opacity 700ms ease 120ms, transform 820ms cubic-bezier(0.2, 0.9, 0.2, 1) 120ms, filter 700ms ease 120ms'
-        }}
-      >
-        Добавили секции ниже hero. Карточки плавно появляются по скроллу и мягко
-        взаимодействуют при наведении.
-      </p>
-      <div style={gridStyle}>{renderedCards}</div>
+      <div style={contentWrapStyle}>
+        <h2
+          ref={introRef}
+          style={{
+            ...headingStyle,
+            opacity: introVisible ? 1 : 0,
+            transform: introVisible ? 'translateY(0px)' : 'translateY(42px)',
+            filter: introVisible ? 'blur(0px)' : 'blur(8px)',
+            transition: 'opacity 700ms ease, transform 800ms cubic-bezier(0.2, 0.9, 0.2, 1), filter 700ms ease'
+          }}
+        >
+          Why Qodeq
+        </h2>
+        <p
+          style={{
+            ...subtitleStyle,
+            opacity: introVisible ? 1 : 0,
+            transform: introVisible ? 'translateY(0px)' : 'translateY(34px)',
+            filter: introVisible ? 'blur(0px)' : 'blur(6px)',
+            transition:
+              'opacity 700ms ease 120ms, transform 820ms cubic-bezier(0.2, 0.9, 0.2, 1) 120ms, filter 700ms ease 120ms'
+          }}
+        >
+          Key outcomes from deploying Qodeq across support and operations.
+        </p>
+        <div style={gridStyle}>{renderedCards}</div>
+      </div>
     </section>
   );
 };

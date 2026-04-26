@@ -29,7 +29,10 @@ const canvasStyle = {
   inset: 0,
   width: '100%',
   height: '100%',
-  display: 'block'
+  display: 'block',
+  // Needed for raycasting / hover on the 3D scene (HTML overlays are pointer-events: none)
+  pointerEvents: 'auto',
+  touchAction: 'none'
 };
 
 const vignetteStyle = {
@@ -128,10 +131,38 @@ const buttonStyle = {
   transition: 'transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease, background 300ms ease'
 };
 
+const satelliteLabelTexts = ['Chatbot', 'CallBot', 'PaymentBot', 'QABot'];
+
+const satelliteLabelBaseStyle = {
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  margin: 0,
+  fontWeight: 300,
+  letterSpacing: '0.36em',
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
+  color: darkTheme.colors.primary,
+  opacity: 0,
+  fontSize: 'clamp(10px, 1.2vw, 20px)',
+  textShadow: '0 0 18px rgba(0,0,0,0.7)',
+  pointerEvents: 'none',
+  willChange: 'transform, opacity'
+};
+
+const labelLayerStyle = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 4,
+  pointerEvents: 'none',
+  fontFamily: "Inter, 'Segoe UI', Arial, sans-serif"
+};
+
 const anchors = [
   { id: 'hero-main', label: 'Hero' },
   { id: 'reveal-blocks', label: 'Blocks' },
   { id: 'horizontal-flow', label: 'Flow' },
+  { id: 'automation-stats', label: 'Stats' },
   { id: 'story-steps', label: 'Story' }
 ];
 
@@ -243,6 +274,91 @@ export const LiquidHeroScene = () => {
     mesh.position.y = 0.06;
     scene.add(mesh);
 
+    const satelliteConfigs = [
+      { x: -1.82, yOffset: 0.55, timePhase: 0.9, rotSign: 1 },
+      { x: -1.82, yOffset: -0.55, timePhase: 1.4, rotSign: -1 },
+      { x: 1.82, yOffset: 0.55, timePhase: 1.1, rotSign: -1 },
+      { x: 1.82, yOffset: -0.55, timePhase: 1.6, rotSign: 1 }
+    ];
+
+    const satelliteMeshes = [];
+    const satelliteData = [];
+
+    const labelWorld = new THREE.Vector3();
+
+    satelliteConfigs.forEach((cfg) => {
+      const satGeometry = new THREE.IcosahedronGeometry(0.48, 4);
+      const satMesh = new THREE.Mesh(satGeometry, material);
+      satMesh.position.set(cfg.x, 0.06 + cfg.yOffset, 0.04);
+      scene.add(satMesh);
+      satelliteMeshes.push(satMesh);
+
+      const satPosAttr = satGeometry.attributes.position;
+      const satBase = satPosAttr.array.slice();
+      satelliteData.push({
+        geometry: satGeometry,
+        positionAttr: satPosAttr,
+        basePositions: satBase,
+        vertexCount: satPosAttr.count,
+        timePhase: cfg.timePhase,
+        rotSign: cfg.rotSign
+      });
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const satHover = new Float32Array(satelliteMeshes.length).fill(0);
+    const satHoverTarget = new Float32Array(satelliteMeshes.length).fill(0);
+
+    const lerpTowardBase = (attr, base, count, t) => {
+      if (t <= 0.000001) {
+        return;
+      }
+      for (let i = 0; i < count; i += 1) {
+        const stride = i * 3;
+        attr.array[stride] = THREE.MathUtils.lerp(attr.array[stride], base[stride], t);
+        attr.array[stride + 1] = THREE.MathUtils.lerp(attr.array[stride + 1], base[stride + 1], t);
+        attr.array[stride + 2] = THREE.MathUtils.lerp(attr.array[stride + 2], base[stride + 2], t);
+      }
+      attr.needsUpdate = true;
+    };
+
+    const domElement = renderer.domElement;
+    const setPointerFromEvent = (event) => {
+      const rect = domElement.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      pointer.x = x * 2 - 1;
+      pointer.y = -(y * 2 - 1);
+    };
+
+    const updateSatelliteHoverTargets = (event) => {
+      setPointerFromEvent(event);
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(satelliteMeshes, false);
+      for (let i = 0; i < satHoverTarget.length; i += 1) {
+        satHoverTarget[i] = 0;
+      }
+      if (hits.length > 0) {
+        const idx = satelliteMeshes.indexOf(hits[0].object);
+        if (idx >= 0) {
+          satHoverTarget[idx] = 1;
+        }
+      }
+      domElement.style.cursor = hits.length > 0 ? 'pointer' : 'default';
+    };
+
+    const clearSatelliteHoverTargets = () => {
+      for (let i = 0; i < satHoverTarget.length; i += 1) {
+        satHoverTarget[i] = 0;
+      }
+      domElement.style.cursor = 'default';
+    };
+
+    domElement.addEventListener('pointermove', updateSatelliteHoverTargets);
+    domElement.addEventListener('pointerleave', clearSatelliteHoverTargets);
+    domElement.addEventListener('pointercancel', clearSatelliteHoverTargets);
+
     const positionAttr = geometry.attributes.position;
     const basePositions = positionAttr.array.slice();
     const vertexCount = positionAttr.count;
@@ -253,6 +369,39 @@ export const LiquidHeroScene = () => {
     let hidden = document.hidden;
 
     const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+
+    const applyVertexWobble = (attr, base, count, t, phase) => {
+      for (let i = 0; i < count; i += 1) {
+        const stride = i * 3;
+        const bx = base[stride];
+        const by = base[stride + 1];
+        const bz = base[stride + 2];
+        const len = Math.hypot(bx, by, bz) || 1;
+        const nx = bx / len;
+        const ny = by / len;
+        const nz = bz / len;
+
+        const waveA = Math.sin(t * 0.00105 + phase + nx * 4.2 + ny * 2.6) * 0.05;
+        const waveB = Math.sin(t * 0.00078 + phase * 0.6 + ny * 5.1 + nz * 3.4) * 0.032;
+        const sharpA =
+          Math.pow(
+            Math.max(0, Math.sin(t * 0.0016 + phase * 0.4 + nx * 8.8 + nz * 5.5)),
+            3
+          ) * 0.11;
+        const sharpB =
+          Math.pow(
+            Math.max(0, Math.sin(t * 0.0012 + phase * 0.5 + ny * 9.2 + nx * 6.4)),
+            4
+          ) * 0.08;
+        const wobble = 1 + waveA + waveB + sharpA + sharpB;
+
+        attr.array[stride] = bx * wobble;
+        attr.array[stride + 1] = by * wobble;
+        attr.array[stride + 2] = bz * wobble;
+      }
+      attr.needsUpdate = true;
+    };
+
     const revealCenteredTitle = (element, progress, maxBlur = 10) => {
       if (!element) {
         return;
@@ -304,42 +453,74 @@ export const LiquidHeroScene = () => {
       const pulse = 1 + Math.sin(time * 0.00045) * 0.01;
       const introRaw = THREE.MathUtils.clamp((time - startTime) / 1800, 0, 1);
       const intro = easeOutCubic(introRaw);
+      const mainY = -0.26 + intro * 0.32 + Math.sin(time * 0.00028) * 0.03;
 
-      for (let i = 0; i < vertexCount; i += 1) {
-        const stride = i * 3;
-        const bx = basePositions[stride];
-        const by = basePositions[stride + 1];
-        const bz = basePositions[stride + 2];
-        const len = Math.hypot(bx, by, bz) || 1;
-        const nx = bx / len;
-        const ny = by / len;
-        const nz = bz / len;
-
-        const waveA = Math.sin(time * 0.00105 + nx * 4.2 + ny * 2.6) * 0.05;
-        const waveB = Math.sin(time * 0.00078 + ny * 5.1 + nz * 3.4) * 0.032;
-        const sharpA =
-          Math.pow(
-            Math.max(0, Math.sin(time * 0.0016 + nx * 8.8 + nz * 5.5)),
-            3
-          ) * 0.11;
-        const sharpB =
-          Math.pow(
-            Math.max(0, Math.sin(time * 0.0012 + ny * 9.2 + nx * 6.4)),
-            4
-          ) * 0.08;
-        const wobble = 1 + waveA + waveB + sharpA + sharpB;
-
-        positionAttr.array[stride] = bx * wobble;
-        positionAttr.array[stride + 1] = by * wobble;
-        positionAttr.array[stride + 2] = bz * wobble;
+      const smoothSpeed = 22;
+      const smoothAlpha = 1 - Math.exp(-smoothSpeed * dt);
+      for (let i = 0; i < satHover.length; i += 1) {
+        const delta = satHoverTarget[i] - satHover[i];
+        if (Math.abs(delta) < 0.0005) {
+          satHover[i] = satHoverTarget[i];
+        } else {
+          satHover[i] += delta * smoothAlpha;
+        }
       }
-      positionAttr.needsUpdate = true;
+
+      applyVertexWobble(positionAttr, basePositions, vertexCount, time, 0);
       geometry.computeVertexNormals();
+
+      satelliteData.forEach((sat, index) => {
+        applyVertexWobble(
+          sat.positionAttr,
+          sat.basePositions,
+          sat.vertexCount,
+          time,
+          sat.timePhase
+        );
+        lerpTowardBase(sat.positionAttr, sat.basePositions, sat.vertexCount, satHover[index]);
+        sat.geometry.computeVertexNormals();
+
+        const satMesh = satelliteMeshes[index];
+        const extraDriftY = Math.sin(time * 0.0003 + sat.timePhase) * 0.018;
+        const driftZ = Math.cos(time * 0.00026 + sat.timePhase * 0.8) * 0.04;
+        const verticalOffset = satelliteConfigs[index].yOffset;
+        satMesh.position.x = satelliteConfigs[index].x + Math.sin(time * 0.00018 + index) * 0.02;
+        satMesh.position.y = mainY + verticalOffset + extraDriftY;
+        satMesh.position.z = 0.04 + driftZ;
+        satMesh.rotation.y += dt * 0.12 * sat.rotSign;
+        satMesh.rotation.x += dt * 0.06;
+        satMesh.scale.setScalar((0.72 + intro * 0.28) * 0.42 * pulse);
+      });
+
+      const labelPad = mountNode.getBoundingClientRect();
+      for (let i = 0; i < satelliteMeshes.length; i += 1) {
+        const labelEl = document.getElementById(`hero-sat-label-${i}`);
+        if (!labelEl) {
+          continue;
+        }
+
+        const satMesh = satelliteMeshes[i];
+        // Anchor directly on the satellite center (like QODEQ on the main orb),
+        // with a hair forward in camera space to reduce "edge" jitter in projection.
+        labelWorld.set(satMesh.position.x, satMesh.position.y, satMesh.position.z + 0.02);
+        labelWorld.project(camera);
+
+        const isBehind = labelWorld.z > 1;
+        const x = labelPad.left + (labelWorld.x * 0.5 + 0.5) * labelPad.width;
+        const y = labelPad.top + (-labelWorld.y * 0.5 + 0.5) * labelPad.height;
+
+        labelEl.style.opacity = isBehind ? '0' : String(intro * 0.86);
+        if (isBehind) {
+          continue;
+        }
+
+        labelEl.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      }
 
       mesh.rotation.y += dt * 0.1;
       mesh.rotation.x += dt * 0.05;
       mesh.position.x = Math.sin(time * 0.00022) * 0.03;
-      mesh.position.y = -0.26 + intro * 0.32 + Math.sin(time * 0.00028) * 0.03;
+      mesh.position.y = mainY;
       mesh.scale.setScalar((0.76 + intro * 0.24) * pulse);
       material.opacity = intro;
 
@@ -355,7 +536,13 @@ export const LiquidHeroScene = () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
       document.removeEventListener('visibilitychange', onVisibility);
+      domElement.removeEventListener('pointermove', updateSatelliteHoverTargets);
+      domElement.removeEventListener('pointerleave', clearSatelliteHoverTargets);
+      domElement.removeEventListener('pointercancel', clearSatelliteHoverTargets);
       geometry.dispose();
+      satelliteData.forEach((sat) => {
+        sat.geometry.dispose();
+      });
       material.dispose();
       renderer.dispose();
       if (mountNode.contains(renderer.domElement)) {
@@ -369,6 +556,13 @@ export const LiquidHeroScene = () => {
       <div ref={mountRef} style={canvasStyle} />
       <div style={vignetteStyle} />
       <div style={grainStyle} />
+      <div style={labelLayerStyle} aria-hidden="true">
+        {satelliteLabelTexts.map((text, index) => (
+          <div key={text} id={`hero-sat-label-${index}`} style={satelliteLabelBaseStyle}>
+            {text}
+          </div>
+        ))}
+      </div>
       <nav style={anchorNavWrapStyle}>
         <div style={anchorRailStyle}>
           {anchors.map((anchor, index) => {
@@ -437,7 +631,7 @@ export const LiquidHeroScene = () => {
             filter: 'blur(8px)'
           }}
         >
-          Form follows no origin unknown
+          Qodeq - AI platform automating operations in iGaming
         </p>
         <button
           ref={buttonRef}

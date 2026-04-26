@@ -301,17 +301,6 @@ export const PinnedStorytellingSection = () => {
           </div>
         </div>
       </div>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          opacity: introVisible ? 0 : 1,
-          background:
-            'linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.15) 100%)',
-          transition: 'opacity 700ms ease'
-        }}
-      />
       <style>
         {`
           .story-intro-animate {
