@@ -200,8 +200,8 @@ const orbRimOuterStyle = {
 /** Скос параллелограмма в px — не от ширины блока, чтобы при растягивании вправо угол не «плыл». */
 const GEO_SKEW_PX = 84;
 
-const geoParallelogramClip = () =>
-  `polygon(${GEO_SKEW_PX}px 0, 100% 0, calc(100% - ${GEO_SKEW_PX}px) 100%, 0 100%)`;
+const geoParallelogramClip = (skewPx) =>
+  `polygon(${skewPx}px 0, 100% 0, calc(100% - ${skewPx}px) 100%, 0 100%)`;
 
 /** Каждый следующий блок левее предыдущего: сдвиг правого края (ступень). */
 const GEO_STAIR_STEP_PX = 83.5;
@@ -215,6 +215,8 @@ const geoHighlightsRailWidthPx =
   GEO_HIGHLIGHT_BLOCK_WIDTH_PX + geoHighlightsStairSlots * GEO_STAIR_STEP_PX;
 
 const GEO_HIGHLIGHT_ROW_HEIGHT_PX = 156;
+const GEO_SKEW_RATIO = GEO_SKEW_PX / GEO_HIGHLIGHT_ROW_HEIGHT_PX;
+const GEO_STEP_RATIO = GEO_STAIR_STEP_PX / GEO_HIGHLIGHT_ROW_HEIGHT_PX;
 /** Перекрытие стыков между рядами (антисубпиксель + без шва от общего filter). */
 const GEO_HIGHLIGHT_ROW_OVERLAP_PX = 2;
 const GEO_HIGHLIGHTS_STACK_HEIGHT_PX =
@@ -236,8 +238,6 @@ const geoHighlightsRailStyle = {
   overflow: 'hidden'
 };
 
-const geoHighlightClip = geoParallelogramClip();
-
 const geoHighlightBlockStyle = {
   width: '100%',
   height: GEO_HIGHLIGHT_ROW_HEIGHT_PX,
@@ -249,8 +249,8 @@ const geoHighlightBlockStyle = {
   border: 'none',
   outline: 'none',
   background: `linear-gradient(145deg, ${darkTheme.colors.surface} 0%, rgba(28, 28, 28, 0.97) 50%, rgba(16, 163, 127, 0.12) 100%)`,
-  clipPath: geoHighlightClip,
-  WebkitClipPath: geoHighlightClip,
+  clipPath: geoParallelogramClip(GEO_SKEW_PX),
+  WebkitClipPath: geoParallelogramClip(GEO_SKEW_PX),
   transform: 'translateZ(0)',
   backfaceVisibility: 'hidden',
   filter: 'drop-shadow(0 32px 72px rgba(0,0,0,0.52))'
@@ -284,18 +284,13 @@ const railStyle = {
   overflow: 'visible'
 };
 
-const getRailSyncPercent = (p, nodeCount) => {
-  if (nodeCount <= 1) {
+const getSnappedPanelIndex = (progressValue, panelCount) => {
+  const maxIndex = panelCount - 1;
+  if (maxIndex <= 0) {
     return 0;
   }
-  const maxIndex = nodeCount - 1;
-  const clampedP = Math.min(1, Math.max(0, p));
-  const f = clampedP * maxIndex;
-  const i = Math.min(maxIndex - 1, Math.max(0, Math.floor(f)));
-  const t = f - i;
-  const a = (i / maxIndex) * 100;
-  const b = ((i + 1) / maxIndex) * 100;
-  return a + (b - a) * t;
+  const clamped = Math.min(1, Math.max(0, progressValue));
+  return Math.min(maxIndex, Math.max(0, Math.round(clamped * maxIndex)));
 };
 
 export const HorizontalScrollSection = () => {
@@ -306,7 +301,11 @@ export const HorizontalScrollSection = () => {
   const [progress, setProgress] = useState(0);
   const [sectionStickyEngaged, setSectionStickyEngaged] = useState(false);
   const sectionStickyEngagedRef = useRef(false);
-  const scrollPerPanelVh = 36;
+  const isTablet = viewportWidth <= 1200;
+  const isMobile = viewportWidth <= 900;
+  const isWideDesktop = viewportWidth >= 1600;
+  const isNarrowDesktop = viewportWidth < 1400 && viewportWidth > 1200;
+  const scrollPerPanelVh = isMobile ? 26 : isTablet ? 30 : 36;
 
   useEffect(() => {
     let rafId = 0;
@@ -355,22 +354,12 @@ export const HorizontalScrollSection = () => {
   }, []);
 
   const translateX = useMemo(() => {
-    const maxIndex = panels.length - 1;
-    if (maxIndex <= 0) {
-      return 0;
-    }
-    const f = progress * maxIndex;
-    const snappedIndex = Math.min(maxIndex, Math.max(0, Math.floor(f)));
+    const snappedIndex = getSnappedPanelIndex(progress, panels.length);
     return -snappedIndex * viewportWidth;
   }, [progress, viewportWidth]);
 
   const activePanelIndex = useMemo(() => {
-    const maxIndex = panels.length - 1;
-    if (maxIndex <= 0) {
-      return 0;
-    }
-    const f = progress * maxIndex;
-    return Math.min(maxIndex, Math.max(0, Math.floor(f)));
+    return getSnappedPanelIndex(progress, panels.length);
   }, [progress]);
 
   const activePanelIndexRef = useRef(activePanelIndex);
@@ -467,7 +456,76 @@ export const HorizontalScrollSection = () => {
     };
   }, [activePanelIndex, sectionStickyEngaged]);
 
-  const scrollLinePercent = getRailSyncPercent(progress, panels.length);
+  const scrollLinePercent = useMemo(() => {
+    const maxIndex = panels.length - 1;
+    if (maxIndex <= 0) {
+      return 0;
+    }
+    return (activePanelIndex / maxIndex) * 100;
+  }, [activePanelIndex]);
+
+  const geoRowHeightPx = isMobile
+    ? 90
+    : isTablet
+      ? 108
+      : isWideDesktop
+        ? 156
+        : isNarrowDesktop
+          ? 116
+          : 128;
+  const geoStepPx = isMobile
+    ? 30
+    : Math.round(geoRowHeightPx * GEO_STEP_RATIO);
+  const geoBlockWidthPx = isMobile
+    ? 380
+    : isTablet
+      ? 560
+      : isWideDesktop
+        ? 760
+        : isNarrowDesktop
+          ? 700
+        : 820;
+  const showGeoHighlights = !isMobile;
+  const geoSkewPx = Math.round(geoRowHeightPx * GEO_SKEW_RATIO);
+  const geoLabelFontSize = isTablet
+    ? 'clamp(18px, 2vw, 24px)'
+    : isWideDesktop
+      ? 'clamp(22px, 2vw, 30px)'
+      : isNarrowDesktop
+        ? 'clamp(18px, 1.6vw, 24px)'
+      : 'clamp(22px, 2vw, 30px)';
+  const leftColumnMaxWidth = isMobile
+    ? 520
+    : isTablet
+      ? 600
+      : isNarrowDesktop
+        ? 600
+        : isWideDesktop
+          ? 760
+          : 680;
+  const leftColumnMarginLeft = 0;
+  const leftTitleFontSize = isMobile
+    ? 'clamp(24px, 8.4vw, 38px)'
+    : isTablet
+      ? 'clamp(30px, 5vw, 52px)'
+      : isNarrowDesktop
+        ? 'clamp(34px, 4.6vw, 58px)'
+        : 'clamp(30px, 6vw, 78px)';
+  const leftTitleLetterSpacing = isMobile
+    ? '0.04em'
+    : isTablet
+      ? '0.06em'
+      : '0.08em';
+  const leftTextFontSize = isMobile
+    ? 'clamp(13px, 3.4vw, 16px)'
+    : isTablet
+      ? 'clamp(14px, 2vw, 17px)'
+      : isNarrowDesktop
+        ? 'clamp(14px, 1.45vw, 17px)'
+        : 'clamp(15px, 1.8vw, 21px)';
+  const leftTextLineHeight = isMobile ? 1.55 : isTablet ? 1.62 : 1.7;
+  const leftIdFontSize = isMobile ? 10 : 12;
+  const leftIdLetterSpacing = isMobile ? '0.2em' : '0.24em';
 
   return (
     <section
@@ -478,10 +536,25 @@ export const HorizontalScrollSection = () => {
       }}
     >
       <div style={stickyStyle}>
-        <div style={{ position: 'absolute', top: 24, right: 28, color: 'rgba(255,255,255,0.55)', fontSize: 12, letterSpacing: '0.2em' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: isMobile ? 14 : 24,
+            right: isMobile ? 14 : 28,
+            color: 'rgba(255,255,255,0.55)',
+            fontSize: isMobile ? 10 : 12,
+            letterSpacing: isMobile ? '0.14em' : '0.2em'
+          }}
+        >
           HORIZONTAL FLOW
         </div>
-        <div style={railStyle}>
+        <div
+          style={{
+            ...railStyle,
+            top: isMobile ? 16 : railStyle.top,
+            width: isMobile ? '88vw' : isTablet ? '82vw' : railStyle.width
+          }}
+        >
           <div
             style={{
               position: 'absolute',
@@ -517,28 +590,27 @@ export const HorizontalScrollSection = () => {
                     transition: 'all 220ms ease'
                   }}
                 />
-                {isActive && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: 16,
-                      transform: 'translateX(-50%)',
-                      fontSize: 14,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      color: darkTheme.colors.primary,
-                      opacity: 1,
-                      animation: 'panelLabelIn 240ms ease-out'
-                    }}
-                  >
-                    {panel.title}
-                  </div>
-                )}
               </div>
             );
           })}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: isMobile ? 34 : 44,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: isMobile ? 11 : 14,
+            letterSpacing: isMobile ? '0.12em' : '0.18em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            color: darkTheme.colors.primary,
+            opacity: 1,
+            animation: 'panelLabelIn 240ms ease-out',
+            pointerEvents: 'none'
+          }}
+        >
+          {panels[activePanelIndex]?.title}
         </div>
         <style>
           {`
@@ -576,39 +648,71 @@ export const HorizontalScrollSection = () => {
           }}
         >
           {panels.map((panel, index) => (
-            <article key={panel.id} style={panelStyleBase}>
-              <div style={{ maxWidth: 760, width: '100%', marginLeft: '2vw' }}>
-                <div style={{ fontSize: 12, color: darkTheme.colors.muted, letterSpacing: '0.24em', marginBottom: 14 }}>
+            <article
+              key={panel.id}
+              style={{
+                ...panelStyleBase,
+                paddingTop: 0,
+                paddingBottom: 0,
+                paddingLeft: isMobile ? '5vw' : '112px',
+                paddingRight: isMobile ? '5vw' : '8vw'
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: leftColumnMaxWidth,
+                  width: '100%',
+                  marginLeft: leftColumnMarginLeft
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: leftIdFontSize,
+                    color: darkTheme.colors.muted,
+                    letterSpacing: leftIdLetterSpacing,
+                    marginBottom: isMobile ? 10 : 14
+                  }}
+                >
                   {panel.id}
                 </div>
                 <h3
                   style={{
                     margin: 0,
-                    fontSize: 'clamp(30px, 6vw, 78px)',
-                    letterSpacing: '0.08em',
+                    fontSize: leftTitleFontSize,
+                    letterSpacing: leftTitleLetterSpacing,
                     textTransform: 'uppercase',
                     fontWeight: 300,
-                    color: darkTheme.colors.primary
+                    color: darkTheme.colors.primary,
+                    lineHeight: 1.1
                   }}
                 >
                   {panel.title}
                 </h3>
                 <p
                   style={{
-                    margin: '18px 0 0',
-                    maxWidth: 640,
-                    fontSize: 'clamp(15px, 1.8vw, 21px)',
-                    lineHeight: 1.7,
+                    margin: isMobile ? '14px 0 0' : '18px 0 0',
+                    maxWidth: leftColumnMaxWidth,
+                    fontSize: leftTextFontSize,
+                    lineHeight: leftTextLineHeight,
                     whiteSpace: 'pre-line',
-                    color: darkTheme.colors.secondary
+                    color: darkTheme.colors.secondary,
+                    textWrap: 'balance'
                   }}
                 >
                   {panel.text}
                 </p>
               </div>
-              {panel.geoHighlights ? (
+              {panel.geoHighlights && showGeoHighlights ? (
                 <div style={geoHighlightsClipWrapStyle}>
-                  <div style={geoHighlightsRailStyle}>
+                  <div
+                    style={{
+                      ...geoHighlightsRailStyle,
+                      left: isWideDesktop ? '14%' : geoHighlightsRailStyle.left,
+                      right: isTablet ? '-18vw' : isWideDesktop ? '-24vw' : '-28vw',
+                      top: `calc(50% - ${(panel.geoHighlights.length * geoRowHeightPx -
+                        Math.max(0, panel.geoHighlights.length - 1) * GEO_HIGHLIGHT_ROW_OVERLAP_PX) / 2}px)`
+                    }}
+                  >
                     {panel.geoHighlights.map((item, highlightIndex) => {
                     const isActiveGeoPanel = activePanelIndex === index;
                     const playedIntro = playedGeoIntroByPanelIdRef.current.has(
@@ -647,10 +751,10 @@ export const HorizontalScrollSection = () => {
                       <div
                         key={`${panel.id}-${item}`}
                         style={{
-                          width: `calc(${GEO_HIGHLIGHT_BLOCK_WIDTH_PX}px + 14vw)`,
+                          width: `calc(${geoBlockWidthPx}px + ${isTablet ? 10 : 14}vw)`,
                           maxWidth: 'none',
                           alignSelf: 'flex-end',
-                          marginRight: highlightIndex * GEO_STAIR_STEP_PX,
+                          marginRight: highlightIndex * geoStepPx,
                           marginTop:
                             highlightIndex > 0 ? -GEO_HIGHLIGHT_ROW_OVERLAP_PX : 0,
                           flexShrink: 0,
@@ -659,14 +763,31 @@ export const HorizontalScrollSection = () => {
                         }}
                       >
                         {isRevealed ? (
-                          <div style={geoHighlightBlockStyle}>
-                            <span style={geoHighlightLabelStyle}>{item}</span>
+                          <div
+                            style={{
+                              ...geoHighlightBlockStyle,
+                              height: geoRowHeightPx,
+                              clipPath: geoParallelogramClip(geoSkewPx),
+                              WebkitClipPath: geoParallelogramClip(geoSkewPx),
+                              padding: isTablet
+                                ? '28px 28px 28px clamp(34px, 4vw, 64px)'
+                                : geoHighlightBlockStyle.padding
+                            }}
+                          >
+                            <span
+                              style={{
+                                ...geoHighlightLabelStyle,
+                                fontSize: geoLabelFontSize
+                              }}
+                            >
+                              {item}
+                            </span>
                           </div>
                         ) : (
                           <div
                             aria-hidden
                             style={{
-                              height: GEO_HIGHLIGHT_ROW_HEIGHT_PX,
+                              height: geoRowHeightPx,
                               width: '100%'
                             }}
                           />
@@ -677,7 +798,15 @@ export const HorizontalScrollSection = () => {
                   </div>
                 </div>
               ) : (
-                <div style={orbWrapStyle}>
+                <div
+                  style={{
+                    ...orbWrapStyle,
+                    right: isMobile ? '4vw' : orbWrapStyle.right,
+                    width: isMobile ? 'clamp(150px, 34vw, 220px)' : orbWrapStyle.width,
+                    height: isMobile ? 'clamp(150px, 34vw, 220px)' : orbWrapStyle.height,
+                    opacity: isMobile ? 0.72 : 1
+                  }}
+                >
                   <div style={orbBloomStyle} />
                   <div
                     style={{

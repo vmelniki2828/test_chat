@@ -84,7 +84,7 @@ const anchorNavWrapStyle = {
 const anchorRailStyle = {
   position: 'relative',
   width: '2px',
-  height: '360px',
+  height: '430px',
   marginLeft: '10px',
   background: darkTheme.colors.divider,
   borderRadius: '999px'
@@ -163,7 +163,9 @@ const anchors = [
   { id: 'reveal-blocks', label: 'Blocks' },
   { id: 'horizontal-flow', label: 'Flow' },
   { id: 'automation-stats', label: 'Stats' },
-  { id: 'story-steps', label: 'Story' }
+  { id: 'story-steps', label: 'Story' },
+  { id: 'dotted-flow', label: 'Dotted' },
+  { id: 'terminal-echo', label: 'Feedback' }
 ];
 
 export const LiquidHeroScene = () => {
@@ -171,9 +173,13 @@ export const LiquidHeroScene = () => {
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const buttonRef = useRef(null);
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth || 1440);
   const [activeAnchor, setActiveAnchor] = useState('hero-main');
   const [hoveredAnchor, setHoveredAnchor] = useState('');
   const [isButtonHover, setIsButtonHover] = useState(false);
+  const isTablet = viewportWidth <= 1200;
+  const isMobile = viewportWidth <= 900;
+  const isSmallMobile = viewportWidth <= 640;
 
   useEffect(() => {
     const updateActiveAnchor = () => {
@@ -221,6 +227,13 @@ export const LiquidHeroScene = () => {
     }
     node.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth || 1440);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -274,12 +287,39 @@ export const LiquidHeroScene = () => {
     mesh.position.y = 0.06;
     scene.add(mesh);
 
-    const satelliteConfigs = [
-      { x: -1.82, yOffset: 0.55, timePhase: 0.9, rotSign: 1 },
-      { x: -1.82, yOffset: -0.55, timePhase: 1.4, rotSign: -1 },
-      { x: 1.82, yOffset: 0.55, timePhase: 1.1, rotSign: -1 },
-      { x: 1.82, yOffset: -0.55, timePhase: 1.6, rotSign: 1 }
-    ];
+    const getSatelliteConfigs = (width) => {
+      if (width <= 640) {
+        return [
+          { x: -1.18, yOffset: 0.44, timePhase: 0.9, rotSign: 1 },
+          { x: -1.18, yOffset: -0.42, timePhase: 1.4, rotSign: -1 },
+          { x: 1.18, yOffset: 0.44, timePhase: 1.1, rotSign: -1 },
+          { x: 1.18, yOffset: -0.42, timePhase: 1.6, rotSign: 1 }
+        ];
+      }
+      if (width <= 900) {
+        return [
+          { x: -1.42, yOffset: 0.5, timePhase: 0.9, rotSign: 1 },
+          { x: -1.42, yOffset: -0.5, timePhase: 1.4, rotSign: -1 },
+          { x: 1.42, yOffset: 0.5, timePhase: 1.1, rotSign: -1 },
+          { x: 1.42, yOffset: -0.5, timePhase: 1.6, rotSign: 1 }
+        ];
+      }
+      if (width <= 1200) {
+        return [
+          { x: -1.62, yOffset: 0.54, timePhase: 0.9, rotSign: 1 },
+          { x: -1.62, yOffset: -0.54, timePhase: 1.4, rotSign: -1 },
+          { x: 1.62, yOffset: 0.54, timePhase: 1.1, rotSign: -1 },
+          { x: 1.62, yOffset: -0.54, timePhase: 1.6, rotSign: 1 }
+        ];
+      }
+      return [
+        { x: -1.82, yOffset: 0.55, timePhase: 0.9, rotSign: 1 },
+        { x: -1.82, yOffset: -0.55, timePhase: 1.4, rotSign: -1 },
+        { x: 1.82, yOffset: 0.55, timePhase: 1.1, rotSign: -1 },
+        { x: 1.82, yOffset: -0.55, timePhase: 1.6, rotSign: 1 }
+      ];
+    };
+    let satelliteConfigs = getSatelliteConfigs(window.innerWidth || 1440);
 
     const satelliteMeshes = [];
     const satelliteData = [];
@@ -435,9 +475,16 @@ export const LiquidHeroScene = () => {
     const resize = () => {
       const width = mountNode.clientWidth || window.innerWidth;
       const height = mountNode.clientHeight || window.innerHeight;
+      const isMobileWidth = width <= 900;
+      const isTabletWidth = width > 900 && width <= 1200;
+
+      camera.fov = isMobileWidth ? 48 : isTabletWidth ? 43 : 38;
+      camera.position.z = isMobileWidth ? 4.85 : isTabletWidth ? 4.55 : 4.35;
+      camera.position.y = isMobileWidth ? 0.12 : 0.05;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
+      satelliteConfigs = getSatelliteConfigs(width);
     };
     resize();
     window.addEventListener('resize', resize);
@@ -506,8 +553,10 @@ export const LiquidHeroScene = () => {
         labelWorld.project(camera);
 
         const isBehind = labelWorld.z > 1;
-        const x = labelPad.left + (labelWorld.x * 0.5 + 0.5) * labelPad.width;
-        const y = labelPad.top + (-labelWorld.y * 0.5 + 0.5) * labelPad.height;
+        // Keep label coordinates local to the hero container.
+        // Using viewport offsets here causes visible drift while page scrolls.
+        const x = (labelWorld.x * 0.5 + 0.5) * labelPad.width;
+        const y = (-labelWorld.y * 0.5 + 0.5) * labelPad.height;
 
         labelEl.style.opacity = isBehind ? '0' : String(intro * 0.86);
         if (isBehind) {
@@ -563,7 +612,14 @@ export const LiquidHeroScene = () => {
           </div>
         ))}
       </div>
-      <nav style={anchorNavWrapStyle}>
+      <nav
+        style={{
+          ...anchorNavWrapStyle,
+          left: isTablet ? (isMobile ? '14px' : '20px') : anchorNavWrapStyle.left,
+          opacity: isMobile ? 0 : 1,
+          pointerEvents: isMobile ? 'none' : 'auto'
+        }}
+      >
         <div style={anchorRailStyle}>
           {anchors.map((anchor, index) => {
             const isActive = activeAnchor === anchor.id;
@@ -594,31 +650,52 @@ export const LiquidHeroScene = () => {
                 }}
                 aria-label={anchor.label}
               >
-                {(isActive || isHovered) && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '24px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: darkTheme.colors.primary,
-                      fontSize: '14px',
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      opacity: 0.95
-                    }}
-                  >
-                    {anchor.label}
-                  </span>
-                )}
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '24px',
+                    top: '50%',
+                    transform: isHovered
+                      ? 'translateY(-50%) translateX(0)'
+                      : 'translateY(-50%) translateX(-8px)',
+                    color: darkTheme.colors.primary,
+                    fontSize: '14px',
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    opacity: isHovered ? 0.95 : 0,
+                    filter: isHovered ? 'blur(0px)' : 'blur(4px)',
+                    textShadow: isHovered
+                      ? '0 0 12px rgba(16,163,127,0.45)'
+                      : '0 0 0 rgba(0,0,0,0)',
+                    transition:
+                      'opacity 260ms ease, transform 340ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease, text-shadow 260ms ease',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  {anchor.label}
+                </span>
               </button>
             );
           })}
         </div>
       </nav>
-      <div style={overlayStyle}>
-        <h1 ref={titleRef} style={{ ...titleStyle, opacity: 0 }}>
+      <div
+        style={{
+          ...overlayStyle,
+          paddingBottom: isMobile ? (isSmallMobile ? '7vh' : '9vh') : overlayStyle.paddingBottom
+        }}
+      >
+        <h1
+          ref={titleRef}
+          style={{
+            ...titleStyle,
+            opacity: 0,
+            top: isMobile ? (isSmallMobile ? '46%' : '48%') : titleStyle.top,
+            letterSpacing: isMobile ? (isSmallMobile ? '0.18em' : '0.24em') : titleStyle.letterSpacing,
+            fontSize: isMobile ? (isSmallMobile ? 'clamp(30px, 13vw, 54px)' : 'clamp(34px, 10vw, 70px)') : titleStyle.fontSize
+          }}
+        >
           QODEQ
         </h1>
         <p
@@ -628,7 +705,11 @@ export const LiquidHeroScene = () => {
             opacity: 0,
             position: 'relative',
             transform: 'translateY(24px)',
-            filter: 'blur(8px)'
+            filter: 'blur(8px)',
+            fontSize: isMobile ? '9px' : subtitleStyle.fontSize,
+            letterSpacing: isMobile ? '0.16em' : subtitleStyle.letterSpacing,
+            textAlign: 'center',
+            paddingInline: isMobile ? '20px' : 0
           }}
         >
           Qodeq - AI platform automating operations in iGaming

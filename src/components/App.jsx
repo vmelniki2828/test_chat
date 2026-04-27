@@ -3,6 +3,8 @@ import { HorizontalScrollSection } from 'components/HorizontalScrollSection';
 import { AutomationStatsSection } from 'components/AutomationStatsSection';
 import { ScrollRevealBlocks } from 'components/ScrollRevealBlocks';
 import { PinnedStorytellingSection } from 'components/PinnedStorytellingSection';
+import { DottedFlowSection } from 'components/DottedFlowSection';
+import { TerminalEchoSection } from 'components/TerminalEchoSection';
 
 export const App = () => {
   return (
@@ -19,6 +21,12 @@ export const App = () => {
       </div>
       <div id="story-steps">
         <PinnedStorytellingSection />
+      </div>
+      <div id="dotted-flow">
+        <DottedFlowSection />
+      </div>
+      <div id="terminal-echo">
+        <TerminalEchoSection />
       </div>
     </>
   );

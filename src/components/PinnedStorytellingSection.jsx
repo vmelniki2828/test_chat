@@ -18,23 +18,18 @@ const darkTheme = {
 const steps = [
   {
     id: '01',
-    title: 'Discover',
-    text: 'Пользователь попадает в закрепленный экран и получает четкий фокус на одну мысль за раз.'
+    title: 'Online casinos and betting companies',
+    text: 'AI automation for player support, operations, and high-volume request handling.'
   },
   {
     id: '02',
-    title: 'Understand',
-    text: 'Скролл двигает историю по шагам: меняются тезисы, визуальный акцент и контекст.'
+    title: 'Fintech and payment services',
+    text: 'Fast response flows for payment checks, status updates, and customer interactions.'
   },
   {
     id: '03',
-    title: 'Trust',
-    text: 'На середине пути показываем ключевые преимущества и доказательства ценности.'
-  },
-  {
-    id: '04',
-    title: 'Act',
-    text: 'Финальный шаг подводит к действию: CTA появляется в момент максимального внимания.'
+    title: 'Call centers and support departments',
+    text: 'Scalable assistant layer for support teams with better routing and quicker resolutions.'
   }
 ];
 
@@ -86,6 +81,7 @@ export const PinnedStorytellingSection = () => {
   const sectionRef = useRef(null);
   const [progress, setProgress] = useState(0);
   const [introVisible, setIntroVisible] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const scrollPerStepVh = 46;
 
   useEffect(() => {
@@ -148,10 +144,14 @@ export const PinnedStorytellingSection = () => {
     return () => observer.disconnect();
   }, []);
 
-  const activeIndex = useMemo(() => {
+  const progressIndex = useMemo(() => {
     const maxIndex = steps.length - 1;
     return Math.min(maxIndex, Math.max(0, Math.round(progress * maxIndex)));
   }, [progress]);
+
+  useEffect(() => {
+    setActiveIndex(progressIndex);
+  }, [progressIndex]);
 
   return (
     <section
@@ -170,7 +170,7 @@ export const PinnedStorytellingSection = () => {
           style={leftColumnStyle}
         >
           <div style={{ fontSize: 12, letterSpacing: '0.22em', opacity: 0.56 }}>
-            PINNED STORY FLOW
+            AUDIENCE
           </div>
           <h2
             style={{
@@ -181,14 +181,33 @@ export const PinnedStorytellingSection = () => {
               textTransform: 'uppercase'
             }}
           >
-            Story Steps
+            Who is it for
           </h2>
+          <p
+            style={{
+              margin: '4px 0 2px',
+              color: darkTheme.colors.secondary,
+              fontSize: 'clamp(16px, 1.4vw, 24px)',
+              lineHeight: 1.45
+            }}
+          >
+            Qodeq is suitable for:
+          </p>
           <div style={{ display: 'grid', gap: '14px', marginTop: '8px' }}>
             {steps.map((step, index) => {
               const isActive = index === activeIndex;
               return (
                 <div
                   key={step.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveIndex(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setActiveIndex(index);
+                    }
+                  }}
                   style={{
                     border: '1px solid rgba(255,255,255,0.14)',
                     borderRadius: 16,
@@ -197,7 +216,8 @@ export const PinnedStorytellingSection = () => {
                     background: isActive ? darkTheme.colors.hover : darkTheme.colors.surface,
                     opacity: isActive ? 1 : 0.52,
                     transform: `translateX(${isActive ? 0 : -8}px)`,
-                    transition: 'all 320ms ease'
+                    transition: 'all 320ms ease',
+                    cursor: 'pointer'
                   }}
                 >
                   <div style={{ fontSize: 11, letterSpacing: '0.2em', opacity: 0.62 }}>
