@@ -73,22 +73,21 @@
     -->
 
 <script>
-    (function(d,t) {
-      var BASE_URL = "https://chatwoot.test.qodeq.net";
-      var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
-      
-      g.src = BASE_URL + "/packs/js/sdk.js";
-      g.async = true;
-      s.parentNode.insertBefore(g,s);
-      
-      g.onload = function(){
-        window.chatwootSDK.run({
-          websiteToken: 'X5gfPvxm1LcPQMhp4iwP8k8q',
-          baseUrl: BASE_URL
-        })
-      }
-    })(document,"script");
-  </script>
+  window.QODEQ_CHATSettings = {"position":"right","type":"standard","launcherTitle":""};
+  (function(d,t) {
+    var BASE_URL="https://chat-platform.qodeq.net";
+    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=BASE_URL+"/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g,s);
+    g.onload=function(){
+      window.chatwootSDK.run({
+        websiteToken: '9QjaYh6rVGWJZBEsS3x9ewGH',
+        baseUrl: BASE_URL
+      })
+    }
+  })(document,"script");
+</script>
     
     
   </body>
